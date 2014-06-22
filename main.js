@@ -93,3 +93,6 @@ m.route(document.body, "/", {
     "/": start,
     "/new_entry": new_entry
 });
+
+// store the url in the hash => no page refreshes on old browsers
+m.route.mode = "hash";
