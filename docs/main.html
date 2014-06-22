@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>main.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="public/stylesheets/normalize.css" />
+  <link rel="stylesheet" media="all" href="docco.css" />
+  <script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"> </script>
+</head>
+<body>
+  <div class="container">
+    <div class="page">
+
+      <div class="header">
+        
+          <h1>main.js</h1>
+        
+
+        
+      </div>
+
+      
+        
+        
+        
+      
+        
+        <h1 id="driverslog">DriversLog</h1>
+<p>DriversLog is a mobile webapp for saving and analyzing
+all informantion belonging to car tours.</p>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>high performance, native-like, even on old Android devices</li>
+<li>using only minimal libraries</li>
+<li>use <em>modern</em> web technologies</li>
+<li>intuitive, clean and minimalistic user interface</li>
+</ul>
+<h2 id="application-architecture">Application architecture</h2>
+<p>To archieve these goals we use the following libraries:</p>
+<h4 id="mithril">Mithril</h4>
+<p>efficient data binding from model to view, with
+very good performance</p>
+<h4 id="topcoat">Topcoat</h4>
+<p>provides the UI-building blocks. Very good performance
+uses only CSS =&gt; minimal</p>
+<h4 id="chart-js">Chart.js</h4>
+<p>minimal library for creating graphs</p>
+<h4 id="gulp-js-">gulp.js:</h4>
+<p>building our files, smaller code as grunt.
+Allows us, to split the js-code into multiple files
+and combine them in production.</p>
+<h4 id="plidoc">Plidoc</h4>
+<p>produces the documentation, allows us to do literate-
+style programming =&gt; better documentation</p>
+
+        
+          <div class='highlight'><pre><span class="hljs-keyword">var</span> start = {};
+
+start.controller = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span>{</span>
+    <span class="hljs-keyword">this</span>.new_entry = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        m.route(<span class="hljs-string">"/new_entry"</span>);
+    };
+};
+
+start.view = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(ctrl)</span> {</span>
+    <span class="hljs-keyword">return</span> m(<span class="hljs-string">"div"</span>, [
+        m(<span class="hljs-string">"div.topcoat-navigation-bar"</span>, [
+    		m(<span class="hljs-string">"div.topcoat-navigation-bar__item.center.full"</span>, [
+        		m(<span class="hljs-string">"h1.topcoat-navigation-bar__title"</span>, <span class="hljs-string">"DriversLog"</span>)   
+        	])
+    	]),
+        m(<span class="hljs-string">"button.topcoat-button"</span>, {onclick: ctrl.new_entry}, <span class="hljs-string">"Create new item"</span>)
+	]);    
+};
+
+
+
+<span class="hljs-comment">// m.module(document.body, start);</span></pre></div>
+        
+      
+        
+        <h2 id="the-new_entry-module-">The new_entry module </h2>
+
+        
+          <div class='highlight'><pre><span class="hljs-keyword">var</span> new_entry = {};
+
+new_entry.controller = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span>{</span>
+    <span class="hljs-keyword">this</span>.to_start = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        m.route(<span class="hljs-string">"/"</span>);
+    }
+};
+
+new_entry.view = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(ctrl)</span> {</span>
+    <span class="hljs-keyword">return</span> m(<span class="hljs-string">"div"</span>, [
+        m(<span class="hljs-string">"div.topcoat-navigation-bar"</span>, [
+            m(<span class="hljs-string">"div.topcoat-navigation-bar__item.center.full"</span>, [
+                m(<span class="hljs-string">"h1.topcoat-navigation-bar__title"</span>, <span class="hljs-string">"Create new Entry"</span>)
+            ])
+        ]),
+        m(<span class="hljs-string">"button.topcoat-button"</span>, {onclick: ctrl.to_start}, <span class="hljs-string">"Back"</span>)
+    ]);
+};
+
+
+m.route(document.body, <span class="hljs-string">"/"</span>, {
+    <span class="hljs-string">"/"</span>: start,
+    <span class="hljs-string">"/new_entry"</span>: new_entry
+});</pre></div>
+        
+      
+      <div class="fleur">h</div>
+    </div>
+  </div>
+</body>
+</html>
