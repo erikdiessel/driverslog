@@ -1,4 +1,38 @@
 var dl = (function(dl) {
+
+   	/*
+	Some date utility functions
+    ---------------------------
+    We use the following format: 
+    	dd.mm.yyyy
+    example:
+    	29.6.2014        
+    */
+    
+    dl.dateToString = function(date) {
+        // return a string in the format
+        return date.getDate().toString() + "." 
+            // the month is 0-based
+            + (date.getMonth()+1).toString() + "."
+            + date.getFullYear().toString();
+    };
+
+    // the inverse of dateToString
+    dl.stringToDate = function(str) {
+        var parts = str.split('.');
+        var day = parseInt(parts[0])
+        // the month is 0-based
+        var month = parseInt(parts[1]) - 1;
+        var year = parseInt(parts[2]);
+
+        return new Date(year, month, day);   
+    };
+    
+    return dl;
+}(dl || {}));
+
+
+var dl = (function(dl) {
     dl.fuelStatistics = {};
     
     var l = {
@@ -264,34 +298,9 @@ var dl = (function(dl) {
             m.route("/");
         };
         
-        // some date utility functions
-        // We use the following format: 
-        // dd.mm.yyyy
-        // example:
-        // 29.6.2014        
-        
-        var dateToString = function(date) {
-            // return a string in the format
-            return date.getDate().toString() + "." 
-            	// the month is 0-based
-            	+ (date.getMonth()+1).toString() + "."
-            	+ date.getFullYear().toString();
-        };
-        
-        // the inverse of dateToString
-        var stringToDate = function(str) {
-            var parts = str.split('.');
-            var day = parseInt(parts[0])
-            // the month is 0-based
-            var month = parseInt(parts[1]) - 1;
-            var year = parseInt(parts[2]);
-            
-        	return new Date(year, month, day);   
-        };
-        
         this.description = m.prop("");
         // standard is the current date
-        this.date = m.prop(dateToString(new Date()));
+        this.date = m.prop(dl.dateToString(new Date()));
         this.amount = m.prop("");
         this.price = m.prop("");
         this.mileage = m.prop("");
@@ -299,7 +308,7 @@ var dl = (function(dl) {
         this.create = function() {
             dl.log.addEntry(
                 this.description(),
-                stringToDate(this.date()),
+                dl.stringToDate(this.date()),
                 parseFloat(this.amount()),
                 parseFloat(this.price()),
                 parseFloat(this.mileage())
