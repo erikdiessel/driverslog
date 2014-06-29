@@ -15,6 +15,13 @@ var dl = (function(dl) {
             JSON.parse(localStorage.getItem('dl.entries')) :
         	[];
         
+        
+        // The date-values are serialzed as strings in the JSON-format
+        // we therefore have to convert the strings back to Date-instances.
+        this.entries.forEach(function(entry) {
+        	entry.date = new Date(Date.parse(entry.date));    
+        });
+        
         this.persist = function() {
             localStorage.setItem('dl.entries', JSON.stringify(this.entries));
         };
@@ -34,7 +41,7 @@ var dl = (function(dl) {
         // Returns an array of the average consumption
         // of fuel per 100 km belonging to the entries
         this.averageConsumptions = function() {
-            var consumptions;
+            var consumptions = [];
             for(var i=0; i<this.entries.length-1; i++) {
                 var before = this.entries[i];
                 var after = this.entries[i+1];
@@ -42,9 +49,14 @@ var dl = (function(dl) {
                 var consumption = after.amount / distance * 100;
                 consumptions.push(consumption);
             }
-            return consumption;
+            return consumptions;
         };
         
+        this.dateStrings = function() {
+        	return this.entries.slice(1).map(function(entry) {
+            	return dl.dateToString(entry.date);    
+            });  
+        };
         
     };
    

@@ -49,14 +49,17 @@ var dl = (function(dl) {
         this.render = function() {
         	var context = document.getElementById('chart').getContext('2d');
             var chart = new Chart(context).Line({
-                labels: ["Januar", "Februar"],
+                labels: dl.log.dateStrings(),
                 datasets: [{
                     fillColor : "rgba(220,220,220,0.5)",
                     strokeColor : "rgba(220,220,220,1)",
                     pointColor : "rgba(220,220,220,1)",
                     pointStrokeColor : "#fff",
-                    data: [20,40]
+                    data: dl.log.averageConsumptions()
                 }]
+            }, {
+                scaleFontColor: "#fff",
+                animation: false
             });
         };
         
@@ -127,6 +130,13 @@ var dl = (function(dl) {
             JSON.parse(localStorage.getItem('dl.entries')) :
         	[];
         
+        
+        // The date-values are serialzed as strings in the JSON-format
+        // we therefore have to convert the strings back to Date-instances.
+        this.entries.forEach(function(entry) {
+        	entry.date = new Date(Date.parse(entry.date));    
+        });
+        
         this.persist = function() {
             localStorage.setItem('dl.entries', JSON.stringify(this.entries));
         };
@@ -146,7 +156,7 @@ var dl = (function(dl) {
         // Returns an array of the average consumption
         // of fuel per 100 km belonging to the entries
         this.averageConsumptions = function() {
-            var consumptions;
+            var consumptions = [];
             for(var i=0; i<this.entries.length-1; i++) {
                 var before = this.entries[i];
                 var after = this.entries[i+1];
@@ -154,9 +164,14 @@ var dl = (function(dl) {
                 var consumption = after.amount / distance * 100;
                 consumptions.push(consumption);
             }
-            return consumption;
+            return consumptions;
         };
         
+        this.dateStrings = function() {
+        	return this.entries.slice(1).map(function(entry) {
+            	return dl.dateToString(entry.date);    
+            });  
+        };
         
     };
    
@@ -386,14 +401,7 @@ var dl = (function(dl) {
     };
     
     return dl;
-}(dl || {}));
-
-// m.route(document.body, "/", {
-//     "/new_entry": dl.new_entry
-// });
-
-	
-
+}(dl || {}));	
 var dl = (function(dl) {
     dl.start = {};
     

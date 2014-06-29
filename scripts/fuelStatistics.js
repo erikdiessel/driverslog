@@ -15,14 +15,17 @@ var dl = (function(dl) {
         this.render = function() {
         	var context = document.getElementById('chart').getContext('2d');
             var chart = new Chart(context).Line({
-                labels: ["Januar", "Februar"],
+                labels: dl.log.dateStrings(),
                 datasets: [{
                     fillColor : "rgba(220,220,220,0.5)",
                     strokeColor : "rgba(220,220,220,1)",
                     pointColor : "rgba(220,220,220,1)",
                     pointStrokeColor : "#fff",
-                    data: [20,40]
+                    data: dl.log.averageConsumptions()
                 }]
+            }, {
+                scaleFontColor: "#fff",
+                animation: false
             });
         };
         
