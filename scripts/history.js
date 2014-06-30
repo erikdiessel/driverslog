@@ -8,19 +8,13 @@ var dl = (function(dl) {
     
     
     dl.history.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.history);
+        
     };
     
     dl.history.view = function(ctrl) {
 		return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.history)
-                ])
-            ])
+            dl.header.view(ctrl.header)
        ]);
     };
     

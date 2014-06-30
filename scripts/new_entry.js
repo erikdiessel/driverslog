@@ -20,9 +20,7 @@ var dl = (function(dl) {
     
 
     dl.new_entry.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.new_entry);
         
         this.description = m.prop("");
         // standard is the current date
@@ -44,12 +42,7 @@ var dl = (function(dl) {
 
     dl.new_entry.view = function(ctrl) {
         return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.new_entry)
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
             m("div.field.col-1-1.mobile-col-1-1", [
                 m("label.col-5-12.mobile-col-5-12", l.description),

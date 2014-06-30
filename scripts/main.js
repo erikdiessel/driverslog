@@ -74,7 +74,9 @@ setTimeout(function() {
         "/": dl.start,
         "/new_entry": dl.new_entry,
         "/history": dl.history,
-        "/fuelStatistics": dl.fuelStatistics
+        "/fuelStatistics": dl.fuelStatistics,
+        "/priceStatistics": dl.priceStatistics,
+        "/mileageStatistics": dl.mileageStatistics
     });
 
     // store the url in the hash => no page refreshes on old browsers

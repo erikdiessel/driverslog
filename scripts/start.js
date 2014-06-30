@@ -5,14 +5,16 @@ var dl = (function(dl) {
     	new_entry: "Neuer Eintrag",
         title: "Driverslog",
         history: "Bisherige Einträge",
-        fuelStatistics: "Verbrauchsstatistik"
+        fuelStatistics: "Verbrauchsstatistik",
+        priceStatistics: "Preisstatistik",
+        mileageStatistics: "Kilometerstatistik"
     };
     
     //var l = localizations[navigator.language.substring(0,2)] || localizations['de'];
     
     
 
-    dl.start.controller = function(){
+    dl.start.controller = function() {
         this.new_entry = function() {
             m.route("/new_entry");
         };
@@ -24,15 +26,22 @@ var dl = (function(dl) {
         this.fuelStatistics = function() {
             m.route("/fuelStatistics");
         };
+        
+        this.priceStatistics = function() {
+            m.route("/priceStatistics");
+        };
+        
+        this.mileageStatistics = function() {
+            m.route("/mileageStatistics");
+        }
+        
+        // don't show a back button
+        this.header = new dl.header.controller(l.title, false);
     };
 
     dl.start.view = function(ctrl) {
         return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("div.topcoat-navigation-bar__item.center.full", [
-                    m("h1.topcoat-navigation-bar__title", l.title)   
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
             m("button.topcoat-button.start-button", 
             	{ onclick: ctrl.new_entry },
@@ -45,8 +54,18 @@ var dl = (function(dl) {
             ),
             
             m("button.topcoat-button.start-button",
-            	{onclick: ctrl.fuelStatistics },
+            	{ onclick: ctrl.fuelStatistics },
               	l.fuelStatistics
+            ),
+            
+            m("button.topcoat-button.start-button",
+             	{ onclick: ctrl.priceStatistics }, 
+             	l.priceStatistics
+            ),
+            
+			m("button.topcoat-button.start-button",
+             	{ onclick: ctrl.mileageStatistics }, 
+             	l.mileageStatistics
             )
         ]);    
     };
@@ -54,7 +73,3 @@ var dl = (function(dl) {
     
     return dl;
 }(dl || {}));
-
-// m.route(document.body, "/", {
-//     "/": dl.start
-// });

@@ -1,3 +1,44 @@
+/* The chart component
+---------------------
+This component represents a chart, together with the view.
+*/
+
+var dl = (function(dl) {
+    
+    dl.chart = {};
+    
+    dl.chart.controller = function(labels, values) {
+        
+    	this.render = function(id, labels, values) {
+            console.log(id);
+            var context = document.getElementById(id).getContext('2d');
+            var chart = new Chart(context).Line({
+                labels: labels,
+                datasets: [{
+                    fillColor : "rgba(220,220,220,0.5)",
+                    strokeColor : "rgba(220,220,220,1)",
+                    pointColor : "rgba(220,220,220,1)",
+                    pointStrokeColor : "#fff",
+                    data: values
+                }]
+            }, {
+                scaleFontColor: "#fff",
+                animation: false
+            });    
+        };
+        
+        setTimeout(this.render.bind(this, 'chart', labels, values), 0);
+    };
+    
+	dl.chart.view = function(ctrl) {
+    	return m("canvas#chart", {
+        	width: document.body.clientWidth - 60,
+           	height: document.body.clientHeight - 100
+        });
+    };
+                   
+    return dl;
+}(dl || {}));
 var dl = (function(dl) {
 
    	/*
@@ -36,55 +77,70 @@ var dl = (function(dl) {
     dl.fuelStatistics = {};
     
     var l = {
-        fuelStatistics: "Verbrauchsstatistik",
-        back: "Zurück"
+        fuelStatistics: "Verbrauchsstatistik"
     }
     
     
     dl.fuelStatistics.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.fuelStatistics);
         
-        this.render = function() {
-        	var context = document.getElementById('chart').getContext('2d');
-            var chart = new Chart(context).Line({
-                labels: dl.log.dateStrings(),
-                datasets: [{
-                    fillColor : "rgba(220,220,220,0.5)",
-                    strokeColor : "rgba(220,220,220,1)",
-                    pointColor : "rgba(220,220,220,1)",
-                    pointStrokeColor : "#fff",
-                    data: dl.log.averageConsumptions()
-                }]
-            }, {
-                scaleFontColor: "#fff",
-                animation: false
-            });
-        };
-        
-        // render the chart *after* the view was rendered
-        setTimeout(this.render, 0);
+        this.chart = new dl.chart.controller(
+        	dl.log.dateStrings(),
+            dl.log.averageConsumptions()
+        );
     };
     
     dl.fuelStatistics.view = function(ctrl) {
 		return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.fuelStatistics)
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
-            m("canvas#chart", {
-                width: document.body.clientWidth - 60,
-                height: document.body.clientHeight - 100
-            })
+            dl.chart.view(this.chart)
        ]);
     };
     
     return dl;
 }(dl || {}));
+/*
+The header component
+---------------------
+The header is a component which represents the title,
+along with a back button to the start page.
+It is its own component since this part is repeated
+in every page.
+*/
+
+var dl = (function(dl) {
+    dl.header = {};
+    
+    var l = {
+        back: "Zurück"
+    }
+    
+    dl.header.controller = function(title, showBackButton) {
+        this.to_start = function() {
+            m.route("/");
+        };
+        
+        this.title = title;
+        
+        this.showBackButton = (showBackButton == undefined || showBackButton);
+    };
+    
+    dl.header.view = function(ctrl) {
+        return m("div.topcoat-navigation-bar", [
+            ctrl.showBackButton ?
+            	m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back)
+                :  "",                
+            m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
+            	m("h1.topcoat-navigation-bar__title", ctrl.title)
+       		])
+        ]);
+    };
+    
+   
+    return dl;
+}(dl || {}));
+
 var dl = (function(dl) {
     dl.history = {};
     
@@ -95,19 +151,13 @@ var dl = (function(dl) {
     
     
     dl.history.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.history);
+        
     };
     
     dl.history.view = function(ctrl) {
 		return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.history)
-                ])
-            ])
+            dl.header.view(ctrl.header)
        ]);
     };
     
@@ -173,6 +223,99 @@ var dl = (function(dl) {
             });  
         };
         
+        
+        // Returns a list of entries, which are not real
+        // but match the values for the real entries,
+        // when the dates match.
+        // This provides us with an option to plot a graph
+        // where the x-axis is proportional to the time.
+        
+        // Parameters:
+        // n: Number of *virtual* entries
+        this.equidistantVirtualEntries = function(n) {
+        	var timestamps = this.entries.map(function(entry) {
+                return entry.date.getTime();
+            });
+            
+            // ugly hack to allow to pass an array as the arguments
+            // list to Math.min / Math.max
+            var first = Math.min.apply(null, timestamps);
+            var last = Math.max.apply(null, timestamps);
+            
+            // The rounding error is negligeable since we
+            // have a millisecond precision and time periods
+            // of days.
+            // We floor the values because the the 
+            // computed timestap of the last virtual
+            // entry is smaller than that of the last
+            // real entry. This makes the formulation
+            // of a loop-condition easier.
+            var step = Math.floor((last - first) / (n - 1));
+            
+            // We are assuming that the entries are ordered
+            // by their date values
+            
+            var entryIndex = 0;
+            
+            var virtualEntries = [];
+            
+            for(var i=0; i < n; i++) {
+                var currentTimestamp = first + i * step;
+                
+                while(this.entries[entryIndex].date.getTime() < currentTimestamp) {
+                    entryIndex++;
+                }
+                
+                // The *entryIndex* is now the index of the first entry which
+                // has is directly after our current virtual entry in time
+                // We can therefore simply copy its values but we have 
+                // to change the date.
+             
+                
+                var clonedEntry = this.entries[entryIndex];
+                
+                virtualEntries.push({
+                    date: new Date(currentTimestamp),
+                    price: clonedEntry.price,
+                    amount: clonedEntry.amount,
+                    mileage: clonedEntry.mileage
+                });
+            }
+            
+            return virtualEntries;
+        }
+        
+        /*
+        The constant STEPS stores the number of labels which
+        are used in equidistant date-charts.
+        */
+        
+        var STEPS = 20;  
+        
+        
+        // Returns a list of dates which are equidistant, 
+        // using equidistantVirtualEntries
+        // Should be used by the chart-creation function.
+        this.equidistantDates = function() {
+            return this.equidistantVirtualEntries(STEPS).map(function(entry) {
+            	return dl.dateToString(entry.date);    
+            });
+        };
+        
+        // The corresponding prices for the equidistant dates
+        this.equidistantPrices = function() {
+            return this.equidistantVirtualEntries(STEPS).map(function(entry) {
+                return entry.price;
+            });
+        };
+        
+        // The corresponding mileage values for the equidistant dates
+        this.equidistantMileages = function() {
+            return this.equidistantVirtualEntries(STEPS).map(function(entry) {
+                return entry.mileage;
+            });
+        };
+        
     };
    
     /*
@@ -189,6 +332,10 @@ var dl = (function(dl) {
         amount: float,
         price: float
     }
+    
+    When storing as JSON, the date-attribute is converted automatically
+    to a string. We therefore have to convert the back when
+    repopulating our entries list on startup.
     */
         
     
@@ -280,13 +427,42 @@ setTimeout(function() {
         "/": dl.start,
         "/new_entry": dl.new_entry,
         "/history": dl.history,
-        "/fuelStatistics": dl.fuelStatistics
+        "/fuelStatistics": dl.fuelStatistics,
+        "/priceStatistics": dl.priceStatistics,
+        "/mileageStatistics": dl.mileageStatistics
     });
 
     // store the url in the hash => no page refreshes on old browsers
     m.route.mode = "hash";    
 }, 0);
 
+var dl = (function(dl) {
+    
+    dl.mileageStatistics = {};
+    
+    var l = {
+        mileageStatistics: "Kilometerstandsstatistik"
+    };
+    
+    dl.mileageStatistics.controller = function() {
+        this.header = new dl.header.controller(l.mileageStatistics);
+        
+        this.chart = new dl.chart.controller(
+        	dl.log.equidistantDates(),
+            dl.log.equidistantMileages()
+        );
+    }
+    
+    dl.mileageStatistics.view = function(ctrl) {
+        return m("div", [
+            dl.header.view(ctrl.header),
+            
+            dl.chart.view(ctrl.chart)
+        ]);
+    };
+    
+    return dl;
+}(dl || {}))
 /*
 The new_entry module 
 ----------------------
@@ -309,9 +485,7 @@ var dl = (function(dl) {
     
 
     dl.new_entry.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.new_entry);
         
         this.description = m.prop("");
         // standard is the current date
@@ -333,12 +507,7 @@ var dl = (function(dl) {
 
     dl.new_entry.view = function(ctrl) {
         return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.new_entry)
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
             m("div.field.col-1-1.mobile-col-1-1", [
                 m("label.col-5-12.mobile-col-5-12", l.description),
@@ -403,20 +572,49 @@ var dl = (function(dl) {
     return dl;
 }(dl || {}));	
 var dl = (function(dl) {
+    
+    dl.priceStatistics = {};
+    
+    l = {
+        priceStatistics: "Preisstatistik: Preis pro l"
+    }
+    
+    dl.priceStatistics.controller = function() {
+    	this.header = new dl.header.controller(l.priceStatistics);    
+
+        this.chart = new dl.chart.controller(
+        	dl.log.equidistantDates(),
+            dl.log.equidistantPrices()
+        );
+    };
+    
+    dl.priceStatistics.view = function(ctrl) {
+    	return m('div', [
+            dl.header.view(ctrl.header),
+            
+            dl.chart.view(ctrl.chart)
+        ]);    
+    };
+    
+    return dl;
+}(dl || {}));
+var dl = (function(dl) {
     dl.start = {};
     
     var l = {
     	new_entry: "Neuer Eintrag",
         title: "Driverslog",
         history: "Bisherige Einträge",
-        fuelStatistics: "Verbrauchsstatistik"
+        fuelStatistics: "Verbrauchsstatistik",
+        priceStatistics: "Preisstatistik",
+        mileageStatistics: "Kilometerstatistik"
     };
     
     //var l = localizations[navigator.language.substring(0,2)] || localizations['de'];
     
     
 
-    dl.start.controller = function(){
+    dl.start.controller = function() {
         this.new_entry = function() {
             m.route("/new_entry");
         };
@@ -428,15 +626,22 @@ var dl = (function(dl) {
         this.fuelStatistics = function() {
             m.route("/fuelStatistics");
         };
+        
+        this.priceStatistics = function() {
+            m.route("/priceStatistics");
+        };
+        
+        this.mileageStatistics = function() {
+            m.route("/mileageStatistics");
+        }
+        
+        // don't show a back button
+        this.header = new dl.header.controller(l.title, false);
     };
 
     dl.start.view = function(ctrl) {
         return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("div.topcoat-navigation-bar__item.center.full", [
-                    m("h1.topcoat-navigation-bar__title", l.title)   
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
             m("button.topcoat-button.start-button", 
             	{ onclick: ctrl.new_entry },
@@ -449,8 +654,18 @@ var dl = (function(dl) {
             ),
             
             m("button.topcoat-button.start-button",
-            	{onclick: ctrl.fuelStatistics },
+            	{ onclick: ctrl.fuelStatistics },
               	l.fuelStatistics
+            ),
+            
+            m("button.topcoat-button.start-button",
+             	{ onclick: ctrl.priceStatistics }, 
+             	l.priceStatistics
+            ),
+            
+			m("button.topcoat-button.start-button",
+             	{ onclick: ctrl.mileageStatistics }, 
+             	l.mileageStatistics
             )
         ]);    
     };
@@ -458,7 +673,3 @@ var dl = (function(dl) {
     
     return dl;
 }(dl || {}));
-
-// m.route(document.body, "/", {
-//     "/": dl.start
-// });

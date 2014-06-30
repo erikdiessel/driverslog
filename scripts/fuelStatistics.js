@@ -2,50 +2,24 @@ var dl = (function(dl) {
     dl.fuelStatistics = {};
     
     var l = {
-        fuelStatistics: "Verbrauchsstatistik",
-        back: "Zurück"
+        fuelStatistics: "Verbrauchsstatistik"
     }
     
     
     dl.fuelStatistics.controller = function() {
-        this.to_start = function() {
-            m.route("/");
-        };
+        this.header = new dl.header.controller(l.fuelStatistics);
         
-        this.render = function() {
-        	var context = document.getElementById('chart').getContext('2d');
-            var chart = new Chart(context).Line({
-                labels: dl.log.dateStrings(),
-                datasets: [{
-                    fillColor : "rgba(220,220,220,0.5)",
-                    strokeColor : "rgba(220,220,220,1)",
-                    pointColor : "rgba(220,220,220,1)",
-                    pointStrokeColor : "#fff",
-                    data: dl.log.averageConsumptions()
-                }]
-            }, {
-                scaleFontColor: "#fff",
-                animation: false
-            });
-        };
-        
-        // render the chart *after* the view was rendered
-        setTimeout(this.render, 0);
+        this.chart = new dl.chart.controller(
+        	dl.log.dateStrings(),
+            dl.log.averageConsumptions()
+        );
     };
     
     dl.fuelStatistics.view = function(ctrl) {
 		return m("div", [
-            m("div.topcoat-navigation-bar", [
-                m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back),                
-                m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
-                    m("h1.topcoat-navigation-bar__title", l.fuelStatistics)
-                ])
-            ]),
+            dl.header.view(ctrl.header),
             
-            m("canvas#chart", {
-                width: document.body.clientWidth - 60,
-                height: document.body.clientHeight - 100
-            })
+            dl.chart.view(this.chart)
        ]);
     };
     
