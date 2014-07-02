@@ -10,7 +10,6 @@ var dl = (function(dl) {
     dl.chart.controller = function(labels, values) {
         
     	this.render = function(id, labels, values) {
-            console.log(id);
             var context = document.getElementById(id).getContext('2d');
             var chart = new Chart(context).Line({
                 labels: labels,
@@ -32,7 +31,7 @@ var dl = (function(dl) {
     
 	dl.chart.view = function(ctrl) {
     	return m("canvas#chart", {
-        	width: document.body.clientWidth - 60,
+        	width: document.body.clientWidth - 5,
            	height: document.body.clientHeight - 100
         });
     };
@@ -73,6 +72,69 @@ var dl = (function(dl) {
 }(dl || {}));
 
 
+/*
+The entry component
+----------------
+
+The entry component represents an entry as 
+it's shown to a human.
+*/
+
+var dl = (function() {
+    
+    dl.entry = {};
+    
+    var l = {
+        date: "Datum: ",
+        price: "Preis pro l: ",
+        amount: "Tankmenge: ",
+        mileage: "Kilometerstand: "
+    }
+    
+    
+    // The parameter *entry* is of type Entry,
+    // as defined in log.js (an object with
+    // the properties:
+    // date, price, amount, mileage, description )
+    dl.entry.controller = function(entry) {
+        this.date = dl.dateToString(entry.date)
+        this.price = entry.price.toString() + " €";
+        this.amount = entry.amount.toString() + " l";
+        this.mileage = entry.mileage.toString() + " km"; 
+        this.description = entry.description
+    };
+    
+    dl.entry.view = function(ctrl) {
+    	return m("div.topcoat-list", [
+            m("h3.topcoat-list__header", ctrl.description),
+            m("ul.topcoat-list__container", [
+                
+                m("li.topcoat-list__item", [
+                	m("span.entry-label", l.date),
+                    m("span", ctrl.date)
+                ]),
+                
+                m("li.topcoat-list__item", [
+                	m("span.entry-label", l.price),
+                    m("span", ctrl.price)
+                ]),    
+                
+                m("li.topcoat-list__item", [
+                	m("span.entry-label", l.amount),
+                    m("span", ctrl.amount)
+                ]),
+                
+                m("li.topcoat-list__item", [
+                	m("span.entry-label", l.mileage),
+                    m("span", ctrl.mileage)
+                ])    
+                
+            ])
+        ]);    
+    };
+    
+    return dl;
+}(dl || {}));
 var dl = (function(dl) {
     dl.fuelStatistics = {};
     
@@ -118,7 +180,7 @@ var dl = (function(dl) {
     
     dl.header.controller = function(title, showBackButton) {
         this.to_start = function() {
-            m.route("/");
+            dl.redirect("/");
         };
         
         this.title = title;
@@ -129,9 +191,9 @@ var dl = (function(dl) {
     dl.header.view = function(ctrl) {
         return m("div.topcoat-navigation-bar", [
             ctrl.showBackButton ?
-            	m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back)
+            	m("button.topcoat-button.topcoat-navigation-bar__item.col-1-4", {onclick: ctrl.to_start}, l.back)
                 :  "",                
-            m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
+            m("div.topcoat-navigation-bar__item.center.header", [
             	m("h1.topcoat-navigation-bar__title", ctrl.title)
        		])
         ]);
@@ -153,12 +215,19 @@ var dl = (function(dl) {
     dl.history.controller = function() {
         this.header = new dl.header.controller(l.history);
         
+        this.entryControllers = dl.log.entries.map(function(entry) {
+            return new dl.entry.controller(entry);
+        });
     };
     
     dl.history.view = function(ctrl) {
 		return m("div", [
-            dl.header.view(ctrl.header)
-       ]);
+            dl.header.view(ctrl.header),
+            
+            m("div", ctrl.entryControllers.map(function(entryController) {
+                return dl.entry.view(entryController);
+            }))
+       	]);
     };
     
     return dl;
@@ -176,20 +245,68 @@ in localstorage.
 var dl = (function(dl) {
     // The constructor for our log
     var Log = function() {
+        
+        /*
+        In Android 2.3 there is a bug:
+        When trying to save a date object as JSON and then
+        parsing the JSON, the JSON object is invalid, such
+        that the date, month, year - fields are NaN.
+        
+        To solve this issue we simply store timestamps
+        instead of Date objects. We therefore have to convert
+        the timestamps to dates in the constructor, and
+        in the *persist* function, we have to convert the
+        dates to timestamps and then stringify the data as JSON.
+        */
+        
         this.entries = localStorage.getItem('dl.entries') ?
             JSON.parse(localStorage.getItem('dl.entries')) :
         	[];
-        
-        
-        // The date-values are serialzed as strings in the JSON-format
-        // we therefore have to convert the strings back to Date-instances.
         this.entries.forEach(function(entry) {
-        	entry.date = new Date(Date.parse(entry.date));    
+            // timestamp to date
+            entry.date = new Date(entry.date);
         });
         
+        
         this.persist = function() {
+            this.entries.forEach(function(entry) {
+                // date to timestamp
+            	entry.date = entry.date.getTime(); 	    
+            });      
+            
             localStorage.setItem('dl.entries', JSON.stringify(this.entries));
+            
+            // and timestamps back to dates
+            this.entries.forEach(function(entry) {
+                entry.date = new Date(entry.date);
+            });
         };
+        
+        this.notEmpty = function() {
+            return this.entries.length > 0;
+        };
+        
+        this.atLeastTwoEntries = function() {
+            return this.entries.length >= 2;
+        }
+        
+        // Returns whether the given values constitute a valid entry
+        this.validEntry = function(date, amount, price, mileage) {
+            return 5.0 < amount  && amount < 400.0
+            	&& 1.0 < price && price < 100 
+            	&& 1 < mileage && mileage < 1000000; 
+        }
+        
+        // Registers a callback which is fired when a new entry
+        // is created. In this way, other modules can subscribe
+        // which did not trigger the creation of a new entry,
+        // for example the start page which wants to show a
+        // notification to inform the user.
+        this.onCreationCallback = function(){}; // empty function
+        
+        this.onCreation = function(func) {
+            this.onCreationCallback = func;
+        }
         
         this.addEntry = function(description, date, amount, price, mileage) {
             this.entries.push({
@@ -201,6 +318,11 @@ var dl = (function(dl) {
             });
             
             this.persist();
+            
+            // fire registered callback for the creation event,
+            // but with a delay, such that the start page
+            // is loaded before
+            setTimeout(this.onCreationCallback, 500);
         };
         
         // Returns an array of the average consumption
@@ -233,6 +355,13 @@ var dl = (function(dl) {
         // Parameters:
         // n: Number of *virtual* entries
         this.equidistantVirtualEntries = function(n) {
+            
+            // return the empty list when the list of entries
+            // is empty, to prevent problems
+            if(this.entries.length == 0) {
+                return [];
+            }
+            
         	var timestamps = this.entries.map(function(entry) {
                 return entry.date.getTime();
             });
@@ -480,7 +609,8 @@ var dl = (function(dl) {
         amount: "Tankmenge in l",
         price: "Preis pro l",
         create: "Erstellen",
-        mileage: "Kilometerstand"
+        mileage: "Kilometerstand",
+        incorrectInputs: "Einige Daten fehlen noch."
     }
     
 
@@ -493,21 +623,45 @@ var dl = (function(dl) {
         this.amount = m.prop("");
         this.price = m.prop("");
         this.mileage = m.prop("");
+        
+        
+        // notification for showing the user that they made
+        // some mistakes when entering their data
+        this.incorrectInputs = 
+            new dl.notification.controller(l.incorrectInputs);
 
+        
+        
         this.create = function() {
-            dl.log.addEntry(
-                this.description(),
-                dl.stringToDate(this.date()),
-                parseFloat(this.amount()),
-                parseFloat(this.price()),
-                parseFloat(this.mileage())
-            );
+            var description = this.description();
+            var date = dl.stringToDate(this.date());
+            var amount = parseFloat(this.amount());
+            var price = parseFloat(this.price());
+            var mileage = parseFloat(this.mileage());
+            
+            if (dl.log.validEntry(date, amount, price, mileage)) {
+                dl.log.addEntry(
+                    description,
+                    date,
+                    amount,
+                    price,
+                    mileage
+                );
+                // go back to the start page
+                dl.redirect("/");
+            }
+            else {
+            	this.incorrectInputs.show();    
+            }            
+            
         }.bind(this);
     };
 
     dl.new_entry.view = function(ctrl) {
         return m("div", [
             dl.header.view(ctrl.header),
+            
+            dl.notification.view(ctrl.incorrectInputs),
             
             m("div.field.col-1-1.mobile-col-1-1", [
                 m("label.col-5-12.mobile-col-5-12", l.description),
@@ -571,6 +725,50 @@ var dl = (function(dl) {
     
     return dl;
 }(dl || {}));	
+/*
+Notification component
+---------------------
+
+A notification is a small message about an event,
+to give some information to the user.
+*/
+
+var dl = (function(dl) {
+    dl.notification = {};
+    
+    dl.notification.controller = function(message) {
+        this.message = message;
+        
+        // property which controls whether the
+        // notification is currently displayed
+        this.showing = m.prop(false);
+        
+        this.show = function() {
+            // display the notification for some time
+            this.showing(true);
+            
+            var DISPLAY_TIME = 4000; // 5 seconds
+            
+            // after some time, hide the notification
+            setTimeout(function() {
+                this.showing(false);
+                // refresh the view
+                // Needed, because this is an asynchronous
+                // operation.
+                m.redraw();
+            }.bind(this), DISPLAY_TIME);
+        }.bind(this);
+    };
+    
+    dl.notification.view = function(ctrl) {
+        return ctrl.showing() ?
+            m("span.topcoat-notification.center", ctrl.message) :
+        	""; 	
+    };
+    
+    
+    return dl;
+}(dl || {}));
 var dl = (function(dl) {
     
     dl.priceStatistics = {};
@@ -598,6 +796,27 @@ var dl = (function(dl) {
     
     return dl;
 }(dl || {}));
+/*
+Redirect utility
+---------------
+
+Mithril uses the pushState-API for
+routing. Since the pushState-API is buggy in
+Android 2.3 - 4.0 we need a new function
+for routing to a new page.
+We change the window.location property manually
+and then trigger the standard Mithril route function.
+*/
+
+var dl = (function(dl) {
+    
+    dl.redirect = function(path) {
+    	window.location.hash = path;
+        m.route(path);
+    };
+    
+    return dl;
+}(dl || {}));
 var dl = (function(dl) {
     dl.start = {};
     
@@ -607,7 +826,9 @@ var dl = (function(dl) {
         history: "Bisherige Einträge",
         fuelStatistics: "Verbrauchsstatistik",
         priceStatistics: "Preisstatistik",
-        mileageStatistics: "Kilometerstatistik"
+        mileageStatistics: "Kilometerstatistik",
+        notEnoughEntries: "Noch nicht genug Einträge vorhanden.",
+        entryCreated: "Eintrag erfolgreich erstellt."
     };
     
     //var l = localizations[navigator.language.substring(0,2)] || localizations['de'];
@@ -615,25 +836,63 @@ var dl = (function(dl) {
     
 
     dl.start.controller = function() {
+        
+        
+        // notification to the user,
+        // that he has to enter yet another
+        // entry
+        this.notEnoughEntries = 
+            new dl.notification.controller(l.notEnoughEntries);
+        
+        // notification that a new entry is created,
+        // shown when the user is routed back to the
+        // start page after a successfull creation of
+        // a new entry
+        this.entryCreated =
+            new dl.notification.controller(l.entryCreated);
+        
+        // subscribe to the event, that a new entry is created
+        dl.log.onCreation(this.entryCreated.show);
+       
         this.new_entry = function() {
-            m.route("/new_entry");
+            dl.redirect("/new_entry");
         };
         
         this.history = function() {
-            m.route("/history");
-        };
+            if(dl.log.notEmpty()) {
+            	dl.redirect("/history");
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.fuelStatistics = function() {
-            m.route("/fuelStatistics");
-        };
+            if(dl.log.atLeastTwoEntries()) {
+		    	dl.redirect("/fuelStatistics");               
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.priceStatistics = function() {
-            m.route("/priceStatistics");
-        };
+            if(dl.log.atLeastTwoEntries()) {
+            	dl.redirect("/priceStatistics");                
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.mileageStatistics = function() {
-            m.route("/mileageStatistics");
-        }
+            if(dl.log.atLeastTwoEntries()) {
+            	dl.redirect("/mileageStatistics");                
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         // don't show a back button
         this.header = new dl.header.controller(l.title, false);
@@ -642,6 +901,13 @@ var dl = (function(dl) {
     dl.start.view = function(ctrl) {
         return m("div", [
             dl.header.view(ctrl.header),
+            
+            // Show a notification with the error:
+            // Not enough entries, when the corresponding
+            // controller property is activated
+            dl.notification.view(ctrl.notEnoughEntries),
+            
+            dl.notification.view(ctrl.entryCreated),
             
             m("button.topcoat-button.start-button", 
             	{ onclick: ctrl.new_entry },

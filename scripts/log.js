@@ -11,20 +11,68 @@ in localstorage.
 var dl = (function(dl) {
     // The constructor for our log
     var Log = function() {
+        
+        /*
+        In Android 2.3 there is a bug:
+        When trying to save a date object as JSON and then
+        parsing the JSON, the JSON object is invalid, such
+        that the date, month, year - fields are NaN.
+        
+        To solve this issue we simply store timestamps
+        instead of Date objects. We therefore have to convert
+        the timestamps to dates in the constructor, and
+        in the *persist* function, we have to convert the
+        dates to timestamps and then stringify the data as JSON.
+        */
+        
         this.entries = localStorage.getItem('dl.entries') ?
             JSON.parse(localStorage.getItem('dl.entries')) :
         	[];
-        
-        
-        // The date-values are serialzed as strings in the JSON-format
-        // we therefore have to convert the strings back to Date-instances.
         this.entries.forEach(function(entry) {
-        	entry.date = new Date(Date.parse(entry.date));    
+            // timestamp to date
+            entry.date = new Date(entry.date);
         });
         
+        
         this.persist = function() {
+            this.entries.forEach(function(entry) {
+                // date to timestamp
+            	entry.date = entry.date.getTime(); 	    
+            });      
+            
             localStorage.setItem('dl.entries', JSON.stringify(this.entries));
+            
+            // and timestamps back to dates
+            this.entries.forEach(function(entry) {
+                entry.date = new Date(entry.date);
+            });
         };
+        
+        this.notEmpty = function() {
+            return this.entries.length > 0;
+        };
+        
+        this.atLeastTwoEntries = function() {
+            return this.entries.length >= 2;
+        }
+        
+        // Returns whether the given values constitute a valid entry
+        this.validEntry = function(date, amount, price, mileage) {
+            return 5.0 < amount  && amount < 400.0
+            	&& 1.0 < price && price < 100 
+            	&& 1 < mileage && mileage < 1000000; 
+        }
+        
+        // Registers a callback which is fired when a new entry
+        // is created. In this way, other modules can subscribe
+        // which did not trigger the creation of a new entry,
+        // for example the start page which wants to show a
+        // notification to inform the user.
+        this.onCreationCallback = function(){}; // empty function
+        
+        this.onCreation = function(func) {
+            this.onCreationCallback = func;
+        }
         
         this.addEntry = function(description, date, amount, price, mileage) {
             this.entries.push({
@@ -36,6 +84,11 @@ var dl = (function(dl) {
             });
             
             this.persist();
+            
+            // fire registered callback for the creation event,
+            // but with a delay, such that the start page
+            // is loaded before
+            setTimeout(this.onCreationCallback, 500);
         };
         
         // Returns an array of the average consumption
@@ -68,6 +121,13 @@ var dl = (function(dl) {
         // Parameters:
         // n: Number of *virtual* entries
         this.equidistantVirtualEntries = function(n) {
+            
+            // return the empty list when the list of entries
+            // is empty, to prevent problems
+            if(this.entries.length == 0) {
+                return [];
+            }
+            
         	var timestamps = this.entries.map(function(entry) {
                 return entry.date.getTime();
             });

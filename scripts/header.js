@@ -16,7 +16,7 @@ var dl = (function(dl) {
     
     dl.header.controller = function(title, showBackButton) {
         this.to_start = function() {
-            m.route("/");
+            dl.redirect("/");
         };
         
         this.title = title;
@@ -27,9 +27,9 @@ var dl = (function(dl) {
     dl.header.view = function(ctrl) {
         return m("div.topcoat-navigation-bar", [
             ctrl.showBackButton ?
-            	m("button.topcoat-button.topcoat-navigation-bar__item.col-1-8.mobile-col-1-4", {onclick: ctrl.to_start}, l.back)
+            	m("button.topcoat-button.topcoat-navigation-bar__item.col-1-4", {onclick: ctrl.to_start}, l.back)
                 :  "",                
-            m("div.topcoat-navigation-bar__item.center.col-9-12.mobile-col-9-12", [
+            m("div.topcoat-navigation-bar__item.center.header", [
             	m("h1.topcoat-navigation-bar__title", ctrl.title)
        		])
         ]);

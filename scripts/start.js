@@ -7,7 +7,9 @@ var dl = (function(dl) {
         history: "Bisherige Einträge",
         fuelStatistics: "Verbrauchsstatistik",
         priceStatistics: "Preisstatistik",
-        mileageStatistics: "Kilometerstatistik"
+        mileageStatistics: "Kilometerstatistik",
+        notEnoughEntries: "Noch nicht genug Einträge vorhanden.",
+        entryCreated: "Eintrag erfolgreich erstellt."
     };
     
     //var l = localizations[navigator.language.substring(0,2)] || localizations['de'];
@@ -15,25 +17,63 @@ var dl = (function(dl) {
     
 
     dl.start.controller = function() {
+        
+        
+        // notification to the user,
+        // that he has to enter yet another
+        // entry
+        this.notEnoughEntries = 
+            new dl.notification.controller(l.notEnoughEntries);
+        
+        // notification that a new entry is created,
+        // shown when the user is routed back to the
+        // start page after a successfull creation of
+        // a new entry
+        this.entryCreated =
+            new dl.notification.controller(l.entryCreated);
+        
+        // subscribe to the event, that a new entry is created
+        dl.log.onCreation(this.entryCreated.show);
+       
         this.new_entry = function() {
-            m.route("/new_entry");
+            dl.redirect("/new_entry");
         };
         
         this.history = function() {
-            m.route("/history");
-        };
+            if(dl.log.notEmpty()) {
+            	dl.redirect("/history");
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.fuelStatistics = function() {
-            m.route("/fuelStatistics");
-        };
+            if(dl.log.atLeastTwoEntries()) {
+		    	dl.redirect("/fuelStatistics");               
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.priceStatistics = function() {
-            m.route("/priceStatistics");
-        };
+            if(dl.log.atLeastTwoEntries()) {
+            	dl.redirect("/priceStatistics");                
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         this.mileageStatistics = function() {
-            m.route("/mileageStatistics");
-        }
+            if(dl.log.atLeastTwoEntries()) {
+            	dl.redirect("/mileageStatistics");                
+            }
+            else {
+                this.notEnoughEntries.show();
+            }
+        }.bind(this);
         
         // don't show a back button
         this.header = new dl.header.controller(l.title, false);
@@ -42,6 +82,13 @@ var dl = (function(dl) {
     dl.start.view = function(ctrl) {
         return m("div", [
             dl.header.view(ctrl.header),
+            
+            // Show a notification with the error:
+            // Not enough entries, when the corresponding
+            // controller property is activated
+            dl.notification.view(ctrl.notEnoughEntries),
+            
+            dl.notification.view(ctrl.entryCreated),
             
             m("button.topcoat-button.start-button", 
             	{ onclick: ctrl.new_entry },

@@ -10,7 +10,6 @@ var dl = (function(dl) {
     dl.chart.controller = function(labels, values) {
         
     	this.render = function(id, labels, values) {
-            console.log(id);
             var context = document.getElementById(id).getContext('2d');
             var chart = new Chart(context).Line({
                 labels: labels,
@@ -32,7 +31,7 @@ var dl = (function(dl) {
     
 	dl.chart.view = function(ctrl) {
     	return m("canvas#chart", {
-        	width: document.body.clientWidth - 60,
+        	width: document.body.clientWidth - 5,
            	height: document.body.clientHeight - 100
         });
     };

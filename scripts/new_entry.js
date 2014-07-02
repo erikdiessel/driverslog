@@ -15,7 +15,8 @@ var dl = (function(dl) {
         amount: "Tankmenge in l",
         price: "Preis pro l",
         create: "Erstellen",
-        mileage: "Kilometerstand"
+        mileage: "Kilometerstand",
+        incorrectInputs: "Einige Daten fehlen noch."
     }
     
 
@@ -28,21 +29,45 @@ var dl = (function(dl) {
         this.amount = m.prop("");
         this.price = m.prop("");
         this.mileage = m.prop("");
+        
+        
+        // notification for showing the user that they made
+        // some mistakes when entering their data
+        this.incorrectInputs = 
+            new dl.notification.controller(l.incorrectInputs);
 
+        
+        
         this.create = function() {
-            dl.log.addEntry(
-                this.description(),
-                dl.stringToDate(this.date()),
-                parseFloat(this.amount()),
-                parseFloat(this.price()),
-                parseFloat(this.mileage())
-            );
+            var description = this.description();
+            var date = dl.stringToDate(this.date());
+            var amount = parseFloat(this.amount());
+            var price = parseFloat(this.price());
+            var mileage = parseFloat(this.mileage());
+            
+            if (dl.log.validEntry(date, amount, price, mileage)) {
+                dl.log.addEntry(
+                    description,
+                    date,
+                    amount,
+                    price,
+                    mileage
+                );
+                // go back to the start page
+                dl.redirect("/");
+            }
+            else {
+            	this.incorrectInputs.show();    
+            }            
+            
         }.bind(this);
     };
 
     dl.new_entry.view = function(ctrl) {
         return m("div", [
             dl.header.view(ctrl.header),
+            
+            dl.notification.view(ctrl.incorrectInputs),
             
             m("div.field.col-1-1.mobile-col-1-1", [
                 m("label.col-5-12.mobile-col-5-12", l.description),

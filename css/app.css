@@ -16,6 +16,20 @@ label {
     width: 100%;
 }
 
+.entry-label {
+    width: 50%;
+    float: left;
+}
+
+.header {
+    margin-left: 20%;
+}
+
+.topcoat-notification.center {
+    display: table;
+    margin: auto;
+}
+
 
 /* Code taken from simplegrid
    We implement a *minimal* grid system. */
