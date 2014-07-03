@@ -1,0 +1,34 @@
+<widget xmlns     = "http://www.w3.org/ns/widgets"
+        xmlns:gap = "http://phonegap.com/ns/1.0"
+        id        = "com.erikdiessel.driverslog"
+        version   = "1.0.0">
+
+    <name>Driverslog</name>
+
+    <description>
+        Driverslog is an app for storing and analyzing the
+        data belonging to your car tours.
+    </description>
+
+    <author>Erik Diessel</author>
+
+    <!--
+        If you do not want any permissions to be added to your app, add the
+        following tag to your config.xml; you will still have the INTERNET
+        permission on your app, which PhoneGap requires.
+    -->
+    <preference name="permissions" value="none" />
+    
+    <preference name="phonegap-version" value="3.3.0" />
+    
+    <preference name="splash-screen-duration" value="0" />
+    
+    <icon src="res/icon/logo.png" />
+    <icon src="res/icon/android/36.png"   gap:platform="android"    gap:density="ldpi" />
+    <icon src="res/icon/android/48.png"   gap:platform="android"    gap:density="mdpi" />
+    <icon src="res/icon/android/72.png"   gap:platform="android"    gap:density="hdpi" />
+    <icon src="res/icon/android/96.png"   gap:platform="android"    gap:density="xhdpi" />
+    
+    <access /> <!-- allows no internet access -->
+    
+</widget>
