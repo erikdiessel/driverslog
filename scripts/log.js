@@ -59,7 +59,7 @@ var dl = (function(dl) {
         // Returns whether the given values constitute a valid entry
         this.validEntry = function(date, amount, price, mileage) {
             return 5.0 < amount  && amount < 400.0
-            	&& 1.0 < price && price < 100 
+            	&& 100.0 < price && price < 200.0 
             	&& 1 < mileage && mileage < 1000000; 
         }
         

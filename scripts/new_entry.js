@@ -13,7 +13,7 @@ var dl = (function(dl) {
         description: "Beschreibung",
         date: "Datum",
         amount: "Tankmenge in l",
-        price: "Preis pro l",
+        price: "Preis pro l in ct",
         create: "Erstellen",
         mileage: "Kilometerstand",
         incorrectInputs: "Einige Daten fehlen noch."
@@ -105,9 +105,9 @@ var dl = (function(dl) {
                     onchange: m.withAttr("value", ctrl.price),
                     value: ctrl.price(),
                     placeholder: l.price,
-                    min: 1.00,
-                    max: 2.00,
-                    step: 0.01
+                    min: 100,
+                    max: 200,
+                    step: 0.1
                 })
             ]),
             

@@ -3,7 +3,7 @@ var dl = (function(dl) {
     dl.priceStatistics = {};
     
     l = {
-        priceStatistics: "Preisstatistik: Preis pro l"
+        priceStatistics: "Preisstatistik: Preis pro l in ct"
     }
     
     dl.priceStatistics.controller = function() {
